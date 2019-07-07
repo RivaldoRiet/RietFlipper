@@ -2,11 +2,11 @@ package RietFlipper;
 
 import org.dreambot.api.utilities.Timer;
 
-public class rietSlot {
+public class rietBuySlot {
 	Timer t = new Timer();
 	boolean timerstarted = false;
 	public rietItem item = null;
-	public rietSlot(rietItem item) {
+	public rietBuySlot(rietItem item) {
 		this.item = item;
 	}
 	

@@ -15,6 +15,7 @@ public class rietItem {
 	boolean time_out = false;
 	boolean timerstarted = false;
 	public StatusEnum status;
+	public boolean hasBeenReset = false;
 	Timer t = new Timer();
 	public rietItem(String name) {
 		this.name = name;
@@ -51,6 +52,7 @@ public class rietItem {
 		this.profitmargin = 0;
 		this.flipAmount = 0;
 		this.slot = -1;
+		this.hasBeenReset = true;
 		}
 	}
 	
