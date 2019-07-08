@@ -18,5 +18,17 @@ public class rietSellSlot {
 		t.reset();
 		this.timerstarted = true;
 	}
+	
+	public void setBinSellItemTrue() {
+		this.binSellItem = true;
+	}
+	
+	public void setBinSellItemFalse() {
+		this.binSellItem = false;
+	}
+	
+	public boolean getSellBinItem() {
+		return this.binSellItem;
+	}
 
 }
