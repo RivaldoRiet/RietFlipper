@@ -401,6 +401,7 @@ public class RietFlipper extends AbstractScript implements InventoryListener {
                     if (geItem.getName().equals(this.rsArr.get(i).item.name)) {
                         if (geItem.getStatus().toString() == "BUY") {
                             this.status = "offer for buy slot " + geItem.getName() + " has expired";
+                            int slotnum = geItem.getSlot();
                             if (geItem.getTransferredAmount() == 0) {
                                     this.status = "Detected that item: " + geItem.getName() + " is not buying.. skipping";
                                     if (g.cancelOffer(geItem.getSlot())) {
@@ -415,7 +416,6 @@ public class RietFlipper extends AbstractScript implements InventoryListener {
                                     }
                                     }
                             } else {
-                                int slotnum = getSlotByItem(geItem.getName());
                                 log("item: " + geItem.getName() + " - " + slotnum);
                                 if (slotnum != -1) {
                                 	this.status = "Cancelling item";
