@@ -34,6 +34,8 @@ public class RietFlipper extends AbstractScript implements InventoryListener {
     ArrayList < rietSellSlot > rssArr = new ArrayList < rietSellSlot > ();
     ArrayList < rietUnsoldSlot > rsuArr = new ArrayList < rietUnsoldSlot > ();
     int moneyMade = 0;
+    int buySlotMinutes = 10;
+    int sellSlotMinutes = 15;
     // rietItem[] riArr = new rietItem[] {
     //   new rietItem("Fly fishing rod"), new rietItem("Wizard hat"), new rietItem("Studded chaps (g)")
     //};
@@ -73,7 +75,7 @@ public class RietFlipper extends AbstractScript implements InventoryListener {
     @Override
     public void onStart() {
         this.status = "Starting up";
-        
+        /*
         this.riArr.add(new rietItem("Uncut ruby"));
         this.riArr.add(new rietItem("Ruby"));
         this.riArr.add(new rietItem("Diamond"));
@@ -97,12 +99,21 @@ public class RietFlipper extends AbstractScript implements InventoryListener {
         this.riArr.add(new rietItem("Gold amulet (u)"));
 
         this.riArr.add(new rietItem("Big bones"));
+        */
+        this.riArr.add(new rietItem("Adamant platebody"));
+        this.riArr.add(new rietItem("Adamant platelegs"));
+        this.riArr.add(new rietItem("Adamant scimitar"));
+        this.riArr.add(new rietItem("Adamant set (lg)"));
+        this.riArr.add(new rietItem("Adamant 2h sword"));
+        this.riArr.add(new rietItem("Adamant axe"));
+        this.riArr.add(new rietItem("Adamant full helm"));
+        this.riArr.add(new rietItem("Adamant kiteshield"));
 
-        this.riArr.add(new rietItem("Rune axe"));
-        this.riArr.add(new rietItem("Rune scimitar"));
-        this.riArr.add(new rietItem("Rune dagger"));
-        this.riArr.add(new rietItem("Rune mace"));
-      
+
+        
+        
+
+
     }
 
     @Override
@@ -240,6 +251,8 @@ public class RietFlipper extends AbstractScript implements InventoryListener {
                 buyText = buyText.split("price of <col=ffb83f>")[1];
                 buyText = buyText.split("<")[0];
                 buyText = buyText.replace(",", "");
+                
+                
                 // int collectedMoney = Integer.parseInt(buyText);
                 
                 log("col1: " + col3.getItemId() + " - col2: " + col4.getItemId());
@@ -248,7 +261,7 @@ public class RietFlipper extends AbstractScript implements InventoryListener {
                 sleep(Calculations.random(500, 750));
                 sleepUntil(() -> g.isGeneralOpen(), Calculations.random(500, 800));
                 col2.interact();
-                sleep(Calculations.random(500, 750));
+                sleep(Calculations.random(2500, 2750));
                 sleepUntil(() -> g.isGeneralOpen(), Calculations.random(500, 800));
                 
                 if(checkmoneyid != 995) {
@@ -272,14 +285,24 @@ public class RietFlipper extends AbstractScript implements InventoryListener {
                                                 sleep(Calculations.random(1000, 2500));
                                                 if (g.confirm()) {
                                                 	sleep(Calculations.random(1000, 2500));
-                                                	this.rsuArr.remove(this.rsuArr.get(i));
+                                                	log("Removing item from itemlist because it didn't sell");
+                                                	for (int j = 0; j < this.riArr.size(); j++) {
+                                                		log("AKAKA: " + this.rsuArr.get(i).binItemName + " - " + this.riArr.get(j).name);
+														if(this.rsuArr.get(i).binItemName.equals(this.riArr.get(j).name)) {
+															this.riArr.remove(this.riArr.get(j));
+														}
+													}
+                                                	
+                                                	
                                                 	for (int j = 0; j < this.rsuArr.size(); j++) {
                 										if(this.rsuArr.get(i).binItemName.equals(this.riArr.get(j).name)) {
                 											this.riArr.remove(this.riArr.get(j));
                 										}
                 									}
                                                 	log("setting bool false");
+                                                	
                                                 	this.rsuArr.remove(this.rsuArr.get(i));
+                                                	
                                                 }
                                             }
                                         }
@@ -323,7 +346,7 @@ public class RietFlipper extends AbstractScript implements InventoryListener {
         for (int i = 0; i < this.rssArr.size(); i++) {
         	String minutesPassed = rssArr.get(i).t.formatTime().toString().split(":")[1];
             int minutes = Integer.parseInt(minutesPassed);
-            if (minutes >= 10) {
+            if (minutes >= this.sellSlotMinutes) {
             	//this.rsuArr.add(new rietUnsoldSlot(this.rssArr.get(i).sellSlotNumber, this.rssArr.get(i).binItemName));
                 for (GrandExchangeItem geItem: g.getItems()) {
                     if(geItem.getName().equals(rssArr.get(i).binItemName)) {
@@ -396,7 +419,7 @@ public class RietFlipper extends AbstractScript implements InventoryListener {
         for (int i = 0; i < this.rsArr.size(); i++) {
             String minutesPassed = rsArr.get(i).t.formatTime().toString().split(":")[1];
             int minutes = Integer.parseInt(minutesPassed);
-            if (minutes >= 5) {
+            if (minutes >= this.buySlotMinutes) {
                 for (GrandExchangeItem geItem: g.getItems()) {
                     if (geItem.getName().equals(this.rsArr.get(i).item.name)) {
                         if (geItem.getStatus().toString() == "BUY") {
