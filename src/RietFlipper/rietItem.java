@@ -3,20 +3,21 @@ package RietFlipper;
 import org.dreambot.api.utilities.Timer;
 
 public class rietItem {
-	int boughtprice;
-	int soldprice;
-	int flipbuyprice;
-	int flipsellprice;
-	int margin;
-	int profitmargin;
-	int flipAmount;
-	String name;
-	int slot;
-	boolean time_out = false;
-	boolean timerstarted = false;
+	public int boughtprice;
+	public int soldprice;
+	public int flipbuyprice;
+	public int flipsellprice;
+	public int margin;
+	public int profitmargin;
+	public int flipAmount;
+	public String name;
+	public int slot;
+	public boolean time_out = false;
+	public boolean timerstarted = false;
 	public StatusEnum status;
 	public boolean hasBeenReset = false;
-	Timer t = new Timer();
+	public Timer t = new Timer();
+	public boolean itemWasNotBuying = false;
 	public rietItem(String name) {
 		this.name = name;
 		this.boughtprice = 0;

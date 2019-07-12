@@ -21,24 +21,26 @@ import org.dreambot.api.utilities.Timer;
 import org.dreambot.api.wrappers.items.Item;
 import org.dreambot.api.wrappers.widgets.WidgetChild;
 
-@ScriptManifest(category = Category.MONEYMAKING, name = "new RietFlipper grand exchange flipper v1.0", author = "Riet/Rivaldo/Oh okay", version = 0)
+import RietFlipper.Util.*;
+
+
+@ScriptManifest(category = Category.MONEYMAKING, name = "rewritten RietFlipper grand exchange flipper v1.0", author = "Riet/Rivaldo/Oh okay", version = 0)
 public class RietFlipper extends AbstractScript implements InventoryListener {
-    Area geArea = new Area(3160, 3482, 3172, 3495);
-    Tile geTile = new Tile(3163, 3485);
-    Timer t = new Timer();
+    public Area geArea = new Area(3160, 3482, 3172, 3495);
+    public Tile geTile = new Tile(3163, 3485);
+    public Timer t = new Timer();
     boolean moneySet = false;
-    int flipmoney = 0;
-    String status = "none";
-    ArrayList < rietItem > riArr = new ArrayList < rietItem > ();
-    ArrayList < rietBuySlot > rsArr = new ArrayList < rietBuySlot > ();
-    ArrayList < rietSellSlot > rssArr = new ArrayList < rietSellSlot > ();
-    ArrayList < rietUnsoldSlot > rsuArr = new ArrayList < rietUnsoldSlot > ();
-    int moneyMade = 0;
-    int buySlotMinutes = 10;
-    int sellSlotMinutes = 15;
-    // rietItem[] riArr = new rietItem[] {
-    //   new rietItem("Fly fishing rod"), new rietItem("Wizard hat"), new rietItem("Studded chaps (g)")
-    //};
+    public int flipmoney = 0;
+    public String status = "none";
+    public ArrayList < rietItem > riArr = new ArrayList < rietItem > ();
+    public ArrayList < rietBuySlot > rsArr = new ArrayList < rietBuySlot > ();
+    public ArrayList < rietSellSlot > rssArr = new ArrayList < rietSellSlot > ();
+    public ArrayList < rietUnsoldSlot > rsuArr = new ArrayList < rietUnsoldSlot > ();
+    public int moneyMade = 0;
+    public int buySlotMinutes = 1;
+    public int sellSlotMinutes = 1;
+    private Node[] nodes;
+
 
     @Override
     public void onPaint(Graphics graphics) {
@@ -53,7 +55,7 @@ public class RietFlipper extends AbstractScript implements InventoryListener {
         ArrayList < rietItem > paintArr = new ArrayList < rietItem > ();
         
         for (int i = 0; i < riArr.size(); i++) {
-            if (riArr.get(i).timerstarted) {
+           if (riArr.get(i).margin > 0) {
             	paintArr.add(riArr.get(i));
             }
         }
@@ -63,11 +65,11 @@ public class RietFlipper extends AbstractScript implements InventoryListener {
         
 
         for (int i = 0; i < rsArr.size(); i++) {
-            graphics.drawString("Slot " + rsArr.get(i).item.slot + ": " + rsArr.get(i).t.formatTime(), 8 * 15 * i, 340);
+            graphics.drawString("Buy Slot: " + rsArr.get(i).item.slot + ": " + rsArr.get(i).t.formatTime(), 8 * 15 * i, 340);
         }
 
         for (int i = 0; i < rssArr.size(); i++) {
-            graphics.drawString("Slot " + rssArr.get(i).sellSlotNumber + ": " + rssArr.get(i).t.formatTime(), 8 * 15 * i, 325);
+            graphics.drawString("Sell Slot: " + rssArr.get(i).sellSlotNumber + ": " + rssArr.get(i).t.formatTime(), 8 * 15 * i, 325);
         }
         
     }
@@ -75,42 +77,26 @@ public class RietFlipper extends AbstractScript implements InventoryListener {
     @Override
     public void onStart() {
         this.status = "Starting up";
-        /*
-        this.riArr.add(new rietItem("Uncut ruby"));
-        this.riArr.add(new rietItem("Ruby"));
-        this.riArr.add(new rietItem("Diamond"));
-        this.riArr.add(new rietItem("Uncut diamond"));
-
 
         this.riArr.add(new rietItem("Sapphire"));
         this.riArr.add(new rietItem("Uncut sapphire"));
-        this.riArr.add(new rietItem("Emerald"));
-        this.riArr.add(new rietItem("Uncut emerald"));
-
-        this.riArr.add(new rietItem("Gold ore"));
-        this.riArr.add(new rietItem("Maple longbow"));
-
-        
-        this.riArr.add(new rietItem("Gold amulet"));
+        this.riArr.add(new rietItem("Uncut ruby"));
+        this.riArr.add(new rietItem("Ruby"));
         this.riArr.add(new rietItem("Gold bar"));
-        this.riArr.add(new rietItem("Gold ring"));
-
+        this.riArr.add(new rietItem("Gold ore"));
         this.riArr.add(new rietItem("Gold necklace"));
-        this.riArr.add(new rietItem("Gold amulet (u)"));
+        this.riArr.add(new rietItem("Big bones")); 
 
-        this.riArr.add(new rietItem("Big bones"));
-        */
-        this.riArr.add(new rietItem("Adamant platebody"));
-        this.riArr.add(new rietItem("Adamant platelegs"));
-        this.riArr.add(new rietItem("Adamant scimitar"));
-        this.riArr.add(new rietItem("Adamant set (lg)"));
-        this.riArr.add(new rietItem("Adamant 2h sword"));
-        this.riArr.add(new rietItem("Adamant axe"));
-        this.riArr.add(new rietItem("Adamant full helm"));
-        this.riArr.add(new rietItem("Adamant kiteshield"));
+        nodes = new Node[]{
+                new OpenGe(this),
+                new FlipItemSell(this),
+                new FlipItemBuy(this),
+                new CheckBuySlots(this),
+                new CheckSellSlots(this),
+                new CollectMoney(this),
+                new BuyItem(this),
+        };
 
-
-        
         
 
 
@@ -118,9 +104,22 @@ public class RietFlipper extends AbstractScript implements InventoryListener {
 
     @Override
     public int onLoop() {
-        Inventory i = getInventory();
-        //Player p = getLocalPlayer();
-        //NPC clerk = getNpcs().closest("Grand Exchange Clerk");
+    	log("sellhasexpired: " + this.sellHasExpired());
+    	log("buyhasexpired: " + this.buyHasExpired());
+    	log("Item: " + itemReadyToFlipSell());
+    	if(itemReadyToFlipSell() != null) {
+    		log("tits: " + itemReadyToFlipSell().name);
+    	}
+    	
+    	 for (Node node: nodes){
+             if (node.validate()){
+            	// log("a " + allObjectsHaveMargins() + " b " + itemWithoutBuyPrice() + " c " + itemReadyToFlip() + "d " + !buyHasExpired() + " e " + !sellHasExpired() + " f " + getInventory().contains("Coins") + " g " + getGrandExchange().isOpen());
+                 return node.execute();
+             }
+         }
+    	 
+    	/*
+    	Inventory i = getInventory();
         GrandExchange g = getGrandExchange();
         if (!geArea.contains(getLocalPlayer())) {
             this.status = "Walking to the ge";
@@ -158,22 +157,7 @@ public class RietFlipper extends AbstractScript implements InventoryListener {
                                 if (riArr.get(j).boughtprice == 0 || riArr.get(j).soldprice == 0) {
                                 	if(!isItemCurrentlyInGE(riArr.get(j))) {
 	                                    getBuyPrice(riArr.get(j));
-	                                    riArr.get(j).margin = riArr.get(j).boughtprice - riArr.get(j).soldprice;
-	
-	
-	                                    if (riArr.get(j).boughtprice != 0) {
-	                                        riArr.get(j).flipbuyprice = riArr.get(j).soldprice + 1;
-	                                    }
-	
-	                                    if (riArr.get(j).soldprice != 0) {
-	                                        riArr.get(j).flipsellprice = riArr.get(j).boughtprice - 1;
-	                                        riArr.get(j).profitmargin = riArr.get(j).flipbuyprice - riArr.get(j).flipsellprice;
-	                                        //riArr.get(j).margin = riArr.get(j).flipbuyprice - riArr.get(j).flipsellprice;
-	                                        if (riArr.get(j).margin == 0 || riArr.get(j).margin <= 2) {
-	                                            this.riArr.remove(j);
-	                                            break;
-	                                        }
-	                                    }
+	                                    setMargin(riArr.get(j));
                                 	}
                                 }
                                 
@@ -202,17 +186,82 @@ public class RietFlipper extends AbstractScript implements InventoryListener {
         }
         
         this.status = "idle";
+        */
+    	
+    	
         return 1;
     }
+    
+    public boolean inventoryContainsSpecificItem(rietItem item) {
+    	if(item != null && getInventory().contains(item.name)) {
+    		return true;
+    	}
+    	return false;
+    }
 
+    public void setMargin(rietItem item) {
+    	item.margin = item.boughtprice - item.soldprice;
+    	
+    	
+        if (item.boughtprice != 0) {
+        	item.flipbuyprice = item.soldprice + 1;
+        }
 
+        if (item.soldprice != 0) {
+        	item.flipsellprice = item.boughtprice - 1;
+        	item.profitmargin = item.flipbuyprice - item.flipsellprice;
+            if (item.margin == 0 || item.margin <= 2) {
+                this.riArr.remove(item);
+            }
+        }
+    }
+    
+    public void setFlipMoney(rietItem item) {
+    	if (getInventory().get("Coins") != null) {
+            flipmoney = (int)(getInventory().get("Coins").getAmount() * 0.50);
+            if (flipmoney > 0 && item.flipbuyprice > 0) {
+            	if(item.flipbuyprice < flipmoney && flipmoney / item.flipbuyprice > 1) {
+            		item.flipAmount = flipmoney / item.flipbuyprice;
+            		item.stopTimer();
+            	}
+            }
+        }
+    }
+
+    
+    
+    public rietItem itemWithoutBuyPrice() {
+    	for (int j = 0; j < riArr.size(); j++) {
+    		sortByHighestMargin();
+            if (riArr.get(j).boughtprice == 0 || riArr.get(j).soldprice == 0) {
+            	if(!isItemCurrentlyInGE(riArr.get(j))) {
+            		if(getInventory().count(riArr.get(j).name) > 1) {
+            			return null;
+            		}
+            		return riArr.get(j);
+            	}
+            }
+    	}
+    	return null;
+    }
+
+    public boolean geItemIsCollectable() {
+    	 GrandExchange g = getGrandExchange();
+         if(g.isReadyToCollect()) {
+        	 return true;
+         }
+    	
+    	return false;
+    }
+    
     public void collectMoney() {
         GrandExchange g = getGrandExchange();
         for (GrandExchangeItem geItem: g.getItems()) {
             int currSlot = geItem.getSlot();
+            log("YY slot: " + currSlot + " - isready: " + g.isReadyToCollect(currSlot) + " - " + !g.isSellOpen() + " - " + !g.isBuyOpen());
             if (g.isReadyToCollect(currSlot) && !g.isSellOpen() && !g.isBuyOpen()) {
                 this.status = "Collecting items from slots";
-               
+                log("komen we ooit hier?!?!");
                 for (int i = 0; i < this.rssArr.size(); i++) {
                 	if(this.rssArr.get(i).sellSlotNumber == currSlot) {
                 		this.rssArr.remove(this.rssArr.get(i));
@@ -244,6 +293,8 @@ public class RietFlipper extends AbstractScript implements InventoryListener {
                 WidgetChild col4 = getWidgets().getWidget(465).getChild(23).getChild(3);
                 
                 
+                log("col1: " + col1.getItemId() + " - col2: " + col2.getItemId() + " - col3: " + col3.getItemId() + " - col4: " + col4.getItemId());
+                
                 WidgetChild checkmoney = getWidgets().getWidget(465).getChild(23).getChild(2);
                 int checkmoneyid = checkmoney.getItemId();
                 
@@ -260,6 +311,7 @@ public class RietFlipper extends AbstractScript implements InventoryListener {
                 col1.interact();
                 sleep(Calculations.random(500, 750));
                 sleepUntil(() -> g.isGeneralOpen(), Calculations.random(500, 800));
+                
                 col2.interact();
                 sleep(Calculations.random(2500, 2750));
                 sleepUntil(() -> g.isGeneralOpen(), Calculations.random(500, 800));
@@ -336,10 +388,78 @@ public class RietFlipper extends AbstractScript implements InventoryListener {
         }
     }
 
+    public boolean buyHasExpired() {
+    	for (int i = 0; i < this.rsArr.size(); i++) {
+	            String minutesPassed = rsArr.get(i).t.formatTime().toString().split(":")[1];
+	            int minutes = Integer.parseInt(minutesPassed);
+	            if (minutes >= this.buySlotMinutes) {
+	            //	log("buyhasexpired item: " +this.rsArr.get(i).item.name);
+	            	return true;
+	            }
+    	}
+    	return false;
+    }
+    
+    public boolean sellHasExpired() {
+    	  for (int i = 0; i < this.rssArr.size(); i++) {
+          	String minutesPassed = rssArr.get(i).t.formatTime().toString().split(":")[1];
+              int minutes = Integer.parseInt(minutesPassed);
+              if (minutes >= this.sellSlotMinutes) {
+            	 // log("sellhasexpired item: " +this.rssArr.get(i).item.name);
+            	  return true;
+              }
+    	  }
+    	return false;
+    }
     
     
+    public void checkBuySlots() {
+    	GrandExchange g = getGrandExchange();
+    	
+    	  for (int i = 0; i < this.rsArr.size(); i++) {
+              String minutesPassed = rsArr.get(i).t.formatTime().toString().split(":")[1];
+              int minutes = Integer.parseInt(minutesPassed);
+              if (minutes >= this.buySlotMinutes) {
+                  for (GrandExchangeItem geItem: g.getItems()) {
+                      if (geItem.getName().equals(this.rsArr.get(i).item.name)) {
+                          if (geItem.getStatus().toString() == "BUY") {
+                              this.status = "offer for buy slot " + geItem.getName() + " has expired";
+                              int slotnum = geItem.getSlot();
+                              if (geItem.getTransferredAmount() == 0) {
+                                      this.status = "Detected that item: " + geItem.getName() + " is not buying.. skipping";
+                                      if (g.cancelOffer(geItem.getSlot())) {
+                                          sleep(Calculations.random(1000, 2500));
+                                          WidgetChild goback = getWidgets().getWidget(465).getChild(4);
+                                          goback.interact();
+                                          sleep(Calculations.random(100, 250));
+                                          sleepUntil(() -> g.isGeneralOpen(), Calculations.random(5000, 8500));
+                                          if(!g.slotContainsItem(geItem.getSlot())) {
+                                          this.rsArr.remove(geItem.getSlot());
+                                          this.riArr.get(i).itemWasNotBuying = true;
+                                          //this.riArr.remove(this.riArr.get(i));
+                                          }
+                                      }
+                              } else {
+                                  log("item: " + geItem.getName() + " - " + slotnum);
+                                  if (slotnum != -1) {
+                                  	this.status = "Cancelling item";
+                                      if (g.cancelOffer(slotnum)) {
+                                          sleep(Calculations.random(1000, 2500));
+                                          WidgetChild goback = getWidgets().getWidget(465).getChild(4);
+                                          goback.interact();
+                                          sleep(Calculations.random(100, 250));
+                                          sleepUntil(() -> g.isGeneralOpen(), Calculations.random(5000, 8500));
+                                      }
+                                  }
+                              }
+                          }
+                      }
+                  }
+              }
+          }
+    }
 
-    public void checkSlots() {
+    public void checkSellSlots() {
         GrandExchange g = getGrandExchange();
 
         
@@ -362,13 +482,11 @@ public class RietFlipper extends AbstractScript implements InventoryListener {
                                 if (geItem.getSlot() != -1) {
                                     if (g.cancelOffer(geItem.getSlot())) {
                                         sleep(Calculations.random(1000, 2500));
-                                        if (g.cancelOffer(geItem.getSlot())) {
                                         WidgetChild goback = getWidgets().getWidget(465).getChild(4);
                                         goback.interact();
                                         sleep(Calculations.random(100, 250));
                                         sleepUntil(() -> g.isGeneralOpen(), Calculations.random(5000, 8500));
                                         this.rsuArr.add(new rietUnsoldSlot(rssArr.get(i).sellSlotNumber, rssArr.get(i).binItemName));
-		                            }
 	                            }
                             }
 		            }
@@ -409,99 +527,6 @@ public class RietFlipper extends AbstractScript implements InventoryListener {
             }
           
         }
-        
-        
-       
-
-        
-     
-        
-        for (int i = 0; i < this.rsArr.size(); i++) {
-            String minutesPassed = rsArr.get(i).t.formatTime().toString().split(":")[1];
-            int minutes = Integer.parseInt(minutesPassed);
-            if (minutes >= this.buySlotMinutes) {
-                for (GrandExchangeItem geItem: g.getItems()) {
-                    if (geItem.getName().equals(this.rsArr.get(i).item.name)) {
-                        if (geItem.getStatus().toString() == "BUY") {
-                            this.status = "offer for buy slot " + geItem.getName() + " has expired";
-                            int slotnum = geItem.getSlot();
-                            if (geItem.getTransferredAmount() == 0) {
-                                    this.status = "Detected that item: " + geItem.getName() + " is not buying.. skipping";
-                                    if (g.cancelOffer(geItem.getSlot())) {
-                                        sleep(Calculations.random(1000, 2500));
-                                        if (g.cancelOffer(geItem.getSlot())) {
-                                        WidgetChild goback = getWidgets().getWidget(465).getChild(4);
-                                        goback.interact();
-                                        sleep(Calculations.random(100, 250));
-                                        sleepUntil(() -> g.isGeneralOpen(), Calculations.random(5000, 8500));
-                                        this.rsArr.remove(geItem.getSlot());
-                                        this.riArr.remove(this.riArr.get(i));
-                                    }
-                                    }
-                            } else {
-                                log("item: " + geItem.getName() + " - " + slotnum);
-                                if (slotnum != -1) {
-                                	this.status = "Cancelling item";
-                                    if (g.cancelOffer(slotnum)) {
-                                        sleep(Calculations.random(1000, 2500));
-                                        if (g.cancelOffer(geItem.getSlot())) {
-                                        WidgetChild goback = getWidgets().getWidget(465).getChild(4);
-                                        goback.interact();
-                                        sleep(Calculations.random(100, 250));
-                                        sleepUntil(() -> g.isGeneralOpen(), Calculations.random(5000, 8500));
-                                    }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        //remove double slots
-        ArrayList < String > count = new ArrayList < String > ();
-        for (int i = 0; i < g.getItems().length; i++) {
-            if (g.getItems()[i] != null && g.getItems()[i].getName() != null && g.getItems()[i].getName() != "null" && g.getItems()[i].getStatus().toString() == "SELL") {
-                count.add(g.getItems()[i].getName());
-            }
-        }
-
-        ArrayList < Integer > removeSlots = new ArrayList < Integer > ();
-        for (int i = 0; i < g.getItems().length; i++) {
-            if (g.getItems()[i] != null && g.getItems()[i].getName() != null && g.getItems()[i].getName() != "null") {
-                int occurrences = Collections.frequency(count, g.getItems()[i].getName());
-                if (occurrences > 1) {
-                    removeSlots.add(g.getItems()[i].getSlot());
-                }
-            }
-        }
-
-
-        for (int i = 0; i < removeSlots.size(); i++) {
-            if (g.isSlotEnabled(removeSlots.get(i))) {
-                this.status = "Removing double slots";
-                if (g.cancelOffer(removeSlots.get(i))) {
-                    sleep(Calculations.random(1000, 2500));
-                    WidgetChild goback = getWidgets().getWidget(465).getChild(4);
-                    goback.interact();
-                    sleep(Calculations.random(100, 250));
-                    sleepUntil(() -> g.isGeneralOpen(), Calculations.random(5000, 8500));
-                    if (g.cancelOffer(removeSlots.get(i))) {
-                        sleep(Calculations.random(100, 250));
-                        if (g.cancelOffer(removeSlots.get(i))) {
-                        goback = getWidgets().getWidget(465).getChild(4);
-                        goback.interact();
-                        sleep(Calculations.random(100, 250));
-                        sleepUntil(() -> g.isGeneralOpen(), Calculations.random(5000, 8500));
-                    }
-                    }
-                }
-            }
-        }
-
-
-
     }
 
     
@@ -531,15 +556,46 @@ public class RietFlipper extends AbstractScript implements InventoryListener {
         }
         return -1;
     }
+    
+    public rietItem itemReadyToFlipSell() {
+    	for (int i = 0; i < this.riArr.size(); i++) {
+    		if (getInventory().contains(riArr.get(i).name)) {
+    			return this.riArr.get(i);
+    		}
+		}
+    	
+    	return null;
+    }
+    
+    public rietItem itemReadyToFlipBuy() {
+    	GrandExchange g = getGrandExchange();
+    	for (int i = 0; i < this.riArr.size(); i++) {
+    		if (!isItemCurrentlyInGE(this.riArr.get(i)) && !inventoryContainsGeItem()  && g.getFirstOpenSlot() != -1 && this.riArr.get(i).boughtprice > 0 && this.riArr.get(i).soldprice > 0) {
+    			return this.riArr.get(i);
+    		}
+		}
+    	
+    	return null;
+    }
+    
+    
+    public boolean itemGotPrices(rietItem item){
+    	if(item != null && item.boughtprice > 0 && item.soldprice > 0) {
+    		return true;
+    	}
+    	return false;
+    }
 
     public void flipItem(rietItem item) {
         GrandExchange g = getGrandExchange();
         
         if (item.boughtprice > 0 && item.soldprice > 0) {
-            if (inventoryContainsGeItem()) {
+        	log("FLIP DEBUG");
+            if (getInventory().contains(item.name)) {
+            	log("FLIP DEBUG111");
             	int slotWeAreUsingToSell = g.getFirstOpenSlot();
-                if (slotWeAreUsingToSell != -1 && item.flipsellprice > 1) {
-                    
+                if (slotWeAreUsingToSell != -1) {
+                    log("FLIP DEBUG222");
                     if (g.addSellItem(item.name)) {
                     	log("WAT DE KENKER");
                     	this.status = "Selling item: " + item.name;
@@ -554,15 +610,17 @@ public class RietFlipper extends AbstractScript implements InventoryListener {
                                 	this.rssArr.add(new rietSellSlot(slotWeAreUsingToSell, item.name));
                                     sleep(Calculations.random(1000, 2500));
                                     sleepUntil(() -> g.isGeneralOpen(), Calculations.random(5000, 8500));
-                                    for (int i = 0; i < this.riArr.size(); i++) {
-                                        this.riArr.get(i).resetFields(item.name);
-                                    }
+                                        item.resetFields(item.name);
+                                        //if(item.itemWasNotBuying) {
+                                        //	this.riArr.remove(item);
+                                      //  }
+                                        ///////////////////// hier ff kijken
                                 }
                             }
                         }
                     }
                 }
-            }
+           }
 
             if (!inventoryContainsGeItem() && g.getFirstOpenSlot() != -1 && !isItemCurrentlyInGE(item)) {
                 item.slot = g.getFirstOpenSlot();
@@ -683,10 +741,10 @@ public class RietFlipper extends AbstractScript implements InventoryListener {
                     }
                 }
             }
+             }else {
+            	 this.collectMoney();
              }
             if (g.getFirstOpenSlot() != -1 && !g.isBuyOpen() && item.soldprice == 0 && !shouldSellItemForBinPrice(item) && getInventory().count(item.name) == 1) {
-                //if(getInventory().get(item.name).getAmount() == 1) {
-            	log("ZZZZZZZZZZZZ WE ZIJN HIER KANKER2");
                 this.status = "Getting sell price for item: " + item.name;
                 if (g.addSellItem(item.name)) {
                     sleepUntil(() -> g.isSellOpen(), Calculations.random(5000, 8500));
@@ -712,7 +770,7 @@ public class RietFlipper extends AbstractScript implements InventoryListener {
                             }
                         }
                     }
-                    // }
+    
                 }
             }
 
